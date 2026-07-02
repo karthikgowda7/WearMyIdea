@@ -9,5 +9,22 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   clerkId   String   @unique
+
+  designs   Design[]
+
   createdAt DateTime @default(now())
+}
+
+model Design {
+  id             String   @id @default(cuid())
+
+  prompt         String
+  enhancedPrompt String
+
+  imageUrl       String
+
+  userId         String
+  user           User @relation(fields: [userId], references: [id])
+
+  createdAt      DateTime @default(now())
 }
