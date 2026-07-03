@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
@@ -42,6 +43,12 @@ export default async function DashboardPage() {
                 <pre className="text-xs">
                     {JSON.stringify(existingUser, null, 2)}
                 </pre>
+                <Link
+                    href="/studio"
+                    className="mt-6 inline-block rounded-lg bg-white px-6 py-3 font-semibold text-black"
+                >
+                    Open Design Studio
+                </Link>
             </div>
         </main>
     );

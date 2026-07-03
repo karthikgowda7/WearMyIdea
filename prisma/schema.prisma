@@ -19,9 +19,9 @@ model Design {
   id             String   @id @default(cuid())
 
   prompt         String
-  enhancedPrompt String
+  enhancedPrompt String?
 
-  imageUrl       String
+  imageUrl       String?
 
   userId         String
   user           User @relation(fields: [userId], references: [id])
