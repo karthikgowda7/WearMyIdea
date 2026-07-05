@@ -45,4 +45,15 @@ model Order {
   status            String @default("PAID")
 
   createdAt         DateTime @default(now())
+
+  customerName      String?
+  phone             String?
+
+  addressLine1      String?
+  city              String?
+  state             String?
+  pincode           String?
+  
+  printroveOrderId  String?
+  trackingNumber    String?
 }

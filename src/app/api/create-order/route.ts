@@ -13,13 +13,21 @@ export async function POST(req: Request) {
             );
         }
 
-        const { amount } = await req.json();
+        const {
+            amount,
+            designId,
+        } = await req.json();
 
-        const order = await razorpay.orders.create({
-            amount: amount * 100,
-            currency: "INR",
-            receipt: `receipt_${Date.now()}`,
-        });
+        const order =
+            await razorpay.orders.create({
+                amount: amount * 100,
+                currency: "INR",
+                receipt: `receipt_${Date.now()}`,
+
+                notes: {
+                    designId,
+                },
+            });
 
         return NextResponse.json(order);
 

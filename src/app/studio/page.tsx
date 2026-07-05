@@ -114,7 +114,7 @@ export default function StudioPage() {
         }
     }
 
-    async function handleBuy() {
+    async function handleBuy(designId: string) {
         try {
             const response = await fetch(
                 "/api/create-order",
@@ -126,6 +126,7 @@ export default function StudioPage() {
                     },
                     body: JSON.stringify({
                         amount: 499,
+                        designId,
                     }),
                 }
             );
@@ -163,9 +164,11 @@ export default function StudioPage() {
                                         "Content-Type":
                                             "application/json",
                                     },
-                                    body: JSON.stringify(
-                                        response
-                                    ),
+                                    body: JSON.stringify({
+                                        ...response,
+                                        designId,
+                                        amount: 499,
+                                    }),
                                 }
                             );
 
@@ -279,7 +282,7 @@ export default function StudioPage() {
                                         Delete
                                     </button>
                                     <button
-                                        onClick={handleBuy}
+                                        onClick={() => handleBuy(design.id)}
                                         className="mt-4 ml-2 rounded border px-3 py-1 text-sm"
                                     >
                                         BUY
