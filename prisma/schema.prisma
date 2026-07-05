@@ -26,5 +26,23 @@ model Design {
   userId         String
   user           User @relation(fields: [userId], references: [id])
 
+  orders         Order[]
+
   createdAt      DateTime @default(now())
+}
+
+model Order {
+  id                String   @id @default(cuid())
+
+  designId          String
+  design            Design @relation(fields: [designId], references: [id])
+
+  razorpayOrderId   String
+  razorpayPaymentId String
+
+  amount            Int
+
+  status            String @default("PAID")
+
+  createdAt         DateTime @default(now())
 }

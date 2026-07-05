@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
-import { uploadImageFromUrl } from "@/lib/uploadToCloudinary";
+import { uploadImageFromUrl } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 

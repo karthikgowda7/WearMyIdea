@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
+
 type Design = {
     id: string;
     prompt: string;
@@ -17,6 +23,21 @@ export default function StudioPage() {
 
     useEffect(() => {
         loadDesigns();
+    }, []);
+
+    useEffect(() => {
+        const script = document.createElement("script");
+
+        script.src =
+            "https://checkout.razorpay.com/v1/checkout.js";
+
+        script.async = true;
+
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
     }, []);
 
     async function loadDesigns() {
@@ -90,6 +111,88 @@ export default function StudioPage() {
             await loadDesigns();
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    async function handleBuy() {
+        try {
+            const response = await fetch(
+                "/api/create-order",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+                    body: JSON.stringify({
+                        amount: 499,
+                    }),
+                }
+            );
+
+            const order =
+                await response.json();
+
+            const razorpay =
+                new window.Razorpay({
+                    key:
+                        process.env
+                            .NEXT_PUBLIC_RAZORPAY_KEY_ID,
+
+                    amount: order.amount,
+
+                    currency:
+                        order.currency,
+
+                    order_id: order.id,
+
+                    name: "WearMyIdea",
+
+                    description:
+                        "Custom AI T-Shirt",
+
+                    handler: async function (
+                        response: any
+                    ) {
+                        const verifyResponse =
+                            await fetch(
+                                "/api/verify-payment",
+                                {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json",
+                                    },
+                                    body: JSON.stringify(
+                                        response
+                                    ),
+                                }
+                            );
+
+                        const result =
+                            await verifyResponse.json();
+
+                        console.log(result);
+
+                        if (result.success) {
+                            alert(
+                                "Payment Verified ✅"
+                            );
+                        } else {
+                            alert(
+                                "Payment Verification Failed ❌"
+                            );
+                        }
+                    },
+                });
+
+            razorpay.open();
+        } catch (error) {
+            console.error(error);
+
+            alert(
+                "Failed to start payment"
+            );
         }
     }
 
@@ -174,6 +277,12 @@ export default function StudioPage() {
                                         className="mt-4 rounded border px-3 py-1 text-sm"
                                     >
                                         Delete
+                                    </button>
+                                    <button
+                                        onClick={handleBuy}
+                                        className="mt-4 ml-2 rounded border px-3 py-1 text-sm"
+                                    >
+                                        BUY
                                     </button>
                                 </div>
                             </div>
