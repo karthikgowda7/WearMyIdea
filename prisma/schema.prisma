@@ -56,4 +56,10 @@ model Order {
   
   printroveOrderId  String?
   trackingNumber    String?
+
+  color             String?
+  size              String?
+  variantId         Int?
+
+  printroveStatus   String?
 }
