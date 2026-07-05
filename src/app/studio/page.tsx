@@ -20,6 +20,20 @@ export default function StudioPage() {
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [designs, setDesigns] = useState<Design[]>([]);
+    const [selectedDesignId, setSelectedDesignId] =
+        useState<string | null>(null);
+
+    const [showAddressForm, setShowAddressForm] =
+        useState(false);
+
+    const [shipping, setShipping] = useState({
+        customerName: "",
+        phone: "",
+        addressLine1: "",
+        city: "",
+        state: "",
+        pincode: "",
+    });
 
     useEffect(() => {
         loadDesigns();
@@ -114,7 +128,32 @@ export default function StudioPage() {
         }
     }
 
-    async function handleBuy(designId: string) {
+    function handleBuy(designId: string) {
+        setSelectedDesignId(designId);
+        setShowAddressForm(true);
+    }
+
+    async function handleAddressSubmit() {
+        if (
+            !shipping.customerName ||
+            !shipping.phone ||
+            !shipping.addressLine1 ||
+            !shipping.city ||
+            !shipping.state ||
+            !shipping.pincode
+        ) {
+            alert("Please fill all fields");
+            return;
+        }
+
+        if (!selectedDesignId) return;
+
+        setShowAddressForm(false);
+
+        await startPayment(selectedDesignId);
+    }
+
+    async function startPayment(designId: string) {
         try {
             const response = await fetch(
                 "/api/create-order",
@@ -127,6 +166,7 @@ export default function StudioPage() {
                     body: JSON.stringify({
                         amount: 499,
                         designId,
+                        shipping,
                     }),
                 }
             );
@@ -168,6 +208,7 @@ export default function StudioPage() {
                                         ...response,
                                         designId,
                                         amount: 499,
+                                        shipping,
                                     }),
                                 }
                             );
@@ -293,6 +334,102 @@ export default function StudioPage() {
                     </div>
                 )}
             </div>
+            {showAddressForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+                    <div className="w-full max-w-md rounded-xl bg-white p-6 text-black">
+                        <h2 className="mb-4 text-xl font-bold">
+                            Shipping Details
+                        </h2>
+
+                        <input
+                            placeholder="Full Name"
+                            className="mb-3 w-full border p-2"
+                            value={shipping.customerName}
+                            onChange={(e) =>
+                                setShipping({
+                                    ...shipping,
+                                    customerName:
+                                        e.target.value,
+                                })
+                            }
+                        />
+
+                        <input
+                            placeholder="Phone"
+                            className="mb-3 w-full border p-2"
+                            value={shipping.phone}
+                            onChange={(e) =>
+                                setShipping({
+                                    ...shipping,
+                                    phone:
+                                        e.target.value,
+                                })
+                            }
+                        />
+
+                        <input
+                            placeholder="Address"
+                            className="mb-3 w-full border p-2"
+                            value={shipping.addressLine1}
+                            onChange={(e) =>
+                                setShipping({
+                                    ...shipping,
+                                    addressLine1:
+                                        e.target.value,
+                                })
+                            }
+                        />
+
+                        <input
+                            placeholder="City"
+                            className="mb-3 w-full border p-2"
+                            value={shipping.city}
+                            onChange={(e) =>
+                                setShipping({
+                                    ...shipping,
+                                    city:
+                                        e.target.value,
+                                })
+                            }
+                        />
+
+                        <input
+                            placeholder="State"
+                            className="mb-3 w-full border p-2"
+                            value={shipping.state}
+                            onChange={(e) =>
+                                setShipping({
+                                    ...shipping,
+                                    state:
+                                        e.target.value,
+                                })
+                            }
+                        />
+
+                        <input
+                            placeholder="Pincode"
+                            className="mb-4 w-full border p-2"
+                            value={shipping.pincode}
+                            onChange={(e) =>
+                                setShipping({
+                                    ...shipping,
+                                    pincode:
+                                        e.target.value,
+                                })
+                            }
+                        />
+
+                        <button
+                            onClick={
+                                handleAddressSubmit
+                            }
+                            className="w-full rounded bg-black px-4 py-2 text-white"
+                        >
+                            Continue To Payment
+                        </button>
+                    </div>
+                </div>
+            )}
         </main>
     );
 }

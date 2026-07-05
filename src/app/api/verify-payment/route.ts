@@ -10,6 +10,7 @@ export async function POST(req: Request) {
             razorpay_signature,
             designId,
             amount,
+            shipping,
         } = await req.json();
 
         const expectedSignature =
@@ -52,6 +53,24 @@ export async function POST(req: Request) {
                     amount,
 
                     status: "PAID",
+
+                    customerName:
+                        shipping.customerName,
+
+                    phone:
+                        shipping.phone,
+
+                    addressLine1:
+                        shipping.addressLine1,
+
+                    city:
+                        shipping.city,
+
+                    state:
+                        shipping.state,
+
+                    pincode:
+                        shipping.pincode,
                 },
             });
 
