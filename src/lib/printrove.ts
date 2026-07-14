@@ -1,4 +1,12 @@
-export async function getPrintroveToken() {
+import {
+    PRINTROVE_PRINT_WIDTH,
+    PRINTROVE_PRINT_HEIGHT,
+} from "./printrove-variants";
+
+/** Authenticate with Printrove and return an access token. */
+export async function getPrintroveToken(): Promise<{
+    access_token: string;
+}> {
     const response = await fetch(
         "https://api.printrove.com/api/external/token",
         {
@@ -6,8 +14,7 @@ export async function getPrintroveToken() {
             headers: {
                 "Content-Type":
                     "application/json",
-                Accept:
-                    "application/json",
+                Accept: "application/json",
             },
             body: JSON.stringify({
                 email:
@@ -29,73 +36,20 @@ export async function getPrintroveToken() {
     return response.json();
 }
 
-export async function getCategories(
-    token: string
-) {
-    const response = await fetch(
-        "https://api.printrove.com/api/external/categories",
-        {
-            headers: {
-                Authorization:
-                    `Bearer ${token}`,
-                Accept:
-                    "application/json",
-            },
-        }
-    );
-
-    return response.json();
-}
-
-export async function getCategoryProducts(
-    token: string,
-    categoryId: number
-) {
-    const response = await fetch(
-        `https://api.printrove.com/api/external/categories/${categoryId}`,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: "application/json",
-            },
-        }
-    );
-
-    return response.json();
-}
-
-export async function getVariants(
-    token: string,
-    categoryId: number,
-    productId: number
-) {
-    const response = await fetch(
-        `https://api.printrove.com/api/external/categories/${categoryId}/products/${productId}`,
-        {
-            headers: {
-                Authorization:
-                    `Bearer ${token}`,
-                Accept:
-                    "application/json",
-            },
-        }
-    );
-
-    return response.json();
-}
-
+/** Upload a design to Printrove via URL. Returns the created design. */
 export async function uploadDesignFromUrl(
     token: string,
     imageUrl: string,
     name: string
-) {
+): Promise<{ id: number; name: string }> {
     const response = await fetch(
         "https://api.printrove.com/api/external/designs/url",
         {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+                "Content-Type":
+                    "application/json",
                 Accept: "application/json",
             },
             body: JSON.stringify({
@@ -108,8 +62,26 @@ export async function uploadDesignFromUrl(
     return response.json();
 }
 
+/** Shape of the data needed to create a Printrove order. */
+export interface PrintroveOrderInput {
+    referenceNumber: string;
+    designId: number;
+    variantId: number;
+
+    customerName: string;
+    email?: string;
+    phone: string;
+
+    addressLine1: string;
+    city: string;
+    state: string;
+    pincode: string;
+}
+
+/** Create a fulfillment order on Printrove. */
 export async function createPrintroveOrder(
-    token: string
+    token: string,
+    input: PrintroveOrderInput
 ) {
     const response = await fetch(
         "https://api.printrove.com/api/external/orders",
@@ -117,47 +89,33 @@ export async function createPrintroveOrder(
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
+                "Content-Type":
+                    "application/json",
                 Accept: "application/json",
             },
-
             body: JSON.stringify({
                 reference_number:
-                    `wearmyidea-${Date.now()}`,
+                    input.referenceNumber,
 
                 retail_price: 499,
 
                 customer: {
-                    name: "Karthik Gowda",
-
-                    email:
-                        "test@example.com",
-
-                    number:
-                        9876543210,
-
+                    name: input.customerName,
+                    email: input.email,
+                    number: input.phone,
                     address1:
-                        "Test Address",
-
-                    address2:
-                        "Bengaluru",
-
-                    pincode:
-                        560001,
-
-                    state:
-                        "Karnataka",
-
-                    city:
-                        "Bengaluru",
-
-                    country:
-                        "India",
+                        input.addressLine1,
+                    address2: input.city,
+                    pincode: input.pincode,
+                    state: input.state,
+                    city: input.city,
+                    country: "India",
                 },
 
                 order_products: [
                     {
-                        product_id: 272,
+                        product_id:
+                            input.variantId,
 
                         quantity: 1,
 
@@ -165,18 +123,12 @@ export async function createPrintroveOrder(
 
                         design: {
                             front: {
-                                id:
-                                    11926343038,
+                                id: input.designId,
 
                                 dimensions: {
-                                    width:
-                                        4680,
-
-                                    height:
-                                        5880,
-
+                                    width: PRINTROVE_PRINT_WIDTH,
+                                    height: PRINTROVE_PRINT_HEIGHT,
                                     top: 0,
-
                                     left: 0,
                                 },
                             },

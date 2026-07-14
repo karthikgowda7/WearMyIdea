@@ -11,6 +11,9 @@ export async function POST(req: Request) {
             designId,
             amount,
             shipping,
+            color,
+            size,
+            variantId,
         } = await req.json();
 
         const expectedSignature =
@@ -71,6 +74,10 @@ export async function POST(req: Request) {
 
                     pincode:
                         shipping.pincode,
+
+                    color,
+                    size,
+                    variantId,
                 },
             });
 

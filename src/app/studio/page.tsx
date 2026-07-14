@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+    resolveVariantId,
+} from "@/lib/printrove-variants";
+import ProductDesigner from "@/components/ProductDesigner";
 
 declare global {
     interface Window {
@@ -17,6 +21,16 @@ type Design = {
 };
 
 export default function StudioPage() {
+
+    const [selectedColor, setSelectedColor] =
+        useState("White");
+    const [selectedSize, setSelectedSize] =
+        useState("M");
+    const [variantId, setVariantId] =
+        useState<number | null>(null);
+    const [showProductConfig, setShowProductConfig] =
+        useState(false);
+
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [designs, setDesigns] = useState<Design[]>([]);
@@ -130,6 +144,31 @@ export default function StudioPage() {
 
     function handleBuy(designId: string) {
         setSelectedDesignId(designId);
+
+        setSelectedColor("White");
+        setSelectedSize("M");
+
+        setVariantId(
+            resolveVariantId(
+                "White",
+                "M"
+            )
+        );
+
+        setShowProductConfig(true);
+    }
+
+    function handleProductContinue() {
+        const id =
+            resolveVariantId(
+                selectedColor,
+                selectedSize
+            );
+
+        setVariantId(id);
+
+        setShowProductConfig(false);
+
         setShowAddressForm(true);
     }
 
@@ -209,6 +248,9 @@ export default function StudioPage() {
                                         designId,
                                         amount: 499,
                                         shipping,
+                                        color: selectedColor,
+                                        size: selectedSize,
+                                        variantId,
                                     }),
                                 }
                             );
@@ -334,6 +376,27 @@ export default function StudioPage() {
                     </div>
                 )}
             </div>
+            {showProductConfig && selectedDesignId && (
+                <ProductDesigner
+                    designImageUrl={
+                        designs.find(
+                            (d) =>
+                                d.id ===
+                                selectedDesignId
+                        )?.imageUrl ?? ""
+                    }
+                    selectedColor={selectedColor}
+                    selectedSize={selectedSize}
+                    onColorChange={setSelectedColor}
+                    onSizeChange={setSelectedSize}
+                    onContinue={
+                        handleProductContinue
+                    }
+                    onCancel={() =>
+                        setShowProductConfig(false)
+                    }
+                />
+            )}
             {showAddressForm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
                     <div className="w-full max-w-md rounded-xl bg-white p-6 text-black">
@@ -419,14 +482,26 @@ export default function StudioPage() {
                             }
                         />
 
-                        <button
-                            onClick={
-                                handleAddressSubmit
-                            }
-                            className="w-full rounded bg-black px-4 py-2 text-white"
-                        >
-                            Continue To Payment
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowAddressForm(false);
+                                    setShowProductConfig(true);
+                                }}
+                                className="flex-1 rounded border border-gray-300 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
+                            >
+                                Back
+                            </button>
+                            <button
+                                onClick={
+                                    handleAddressSubmit
+                                }
+                                className="flex-1 rounded bg-black py-2 font-semibold text-white transition hover:bg-neutral-800"
+                            >
+                                Continue To Payment
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
