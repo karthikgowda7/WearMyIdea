@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TShirtPreview from "./TShirtPreview";
 
 interface ProductDesignerProps {
@@ -16,7 +16,15 @@ interface ProductDesignerProps {
 const COLORS = ["White", "Black"] as const;
 const SIZES = ["S", "M", "L", "XL"] as const;
 
-/** Swatch hex values for the visual color dots */
+
+interface StockEntry {
+    variantId: number;
+    color: string;
+    size: string;
+    stockStatus: "in_stock" | "out_of_stock";
+}
+
+
 const COLOR_HEX: Record<string, string> = {
     White: "#ffffff",
     Black: "#1a1a1a",
@@ -34,6 +42,114 @@ export default function ProductDesigner({
     const [activeTab, setActiveTab] = useState<
         "front" | "back"
     >("front");
+
+    /* ── Stock state ── */
+    const [stockData, setStockData] = useState<StockEntry[]>([]);
+    const [stockLoading, setStockLoading] = useState(true);
+    const [stockError, setStockError] = useState(false);
+
+    /* Fetch stock once when the modal mounts. */
+    useEffect(() => {
+        let cancelled = false;
+        setStockLoading(true);
+        setStockError(false);
+
+        fetch("/api/printrove-stock")
+            .then((res) => {
+                if (!res.ok) throw new Error("fetch failed");
+                return res.json() as Promise<StockEntry[]>;
+            })
+            .then((data) => {
+                if (cancelled) return;
+                setStockData(data);
+
+                // Auto-switch to first available size for the current color
+                // in case the pre-selected size is out of stock.
+                const firstAvailable = SIZES.find(
+                    (s) =>
+                        data.find(
+                            (e) =>
+                                e.color === selectedColor &&
+                                e.size === s &&
+                                e.stockStatus === "in_stock"
+                        )
+                );
+                if (
+                    firstAvailable &&
+                    !data.find(
+                        (e) =>
+                            e.color === selectedColor &&
+                            e.size === selectedSize &&
+                            e.stockStatus === "in_stock"
+                    )
+                ) {
+                    onSizeChange(firstAvailable);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setStockError(true);
+            })
+            .finally(() => {
+                if (!cancelled) setStockLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    /**
+     * Returns true when a given size is available for the selected color.
+     * While loading or on error, every variant is treated as available
+     * (optimistic UX — we never over-restrict due to transient failures).
+     */
+    function isSizeAvailable(size: string): boolean {
+        if (stockLoading || stockError || stockData.length === 0)
+            return true;
+        const entry = stockData.find(
+            (e) => e.color === selectedColor && e.size === size
+        );
+        return !entry || entry.stockStatus === "in_stock";
+    }
+
+    /** Returns true when the currently selected color+size is available. */
+    const selectedVariantAvailable =
+        stockLoading ||
+        stockError ||
+        stockData.length === 0 ||
+        !!stockData.find(
+            (e) =>
+                e.color === selectedColor &&
+                e.size === selectedSize &&
+                e.stockStatus === "in_stock"
+        );
+
+    /**
+     * When the user changes color, auto-switch to the first available size
+     * for that new color so they never land on an OOS variant silently.
+     */
+    function handleColorChange(color: string) {
+        onColorChange(color);
+        if (stockData.length === 0) return;
+        const currentOk = stockData.find(
+            (e) =>
+                e.color === color &&
+                e.size === selectedSize &&
+                e.stockStatus === "in_stock"
+        );
+        if (!currentOk) {
+            const first = SIZES.find((s) =>
+                stockData.find(
+                    (e) =>
+                        e.color === color &&
+                        e.size === s &&
+                        e.stockStatus === "in_stock"
+                )
+            );
+            if (first) onSizeChange(first);
+        }
+    }
 
     return (
         /* ── Full-screen overlay ── */
@@ -79,15 +195,14 @@ export default function ProductDesigner({
                                     <button
                                         key={c}
                                         onClick={() =>
-                                            onColorChange(c)
+                                            handleColorChange(c)
                                         }
                                         title={c}
-                                        className={`h-8 w-8 rounded-full border-2 transition ${
-                                            selectedColor ===
-                                            c
+                                        className={`h-8 w-8 rounded-full border-2 transition ${selectedColor ===
+                                                c
                                                 ? "border-black ring-2 ring-black/20"
                                                 : "border-gray-300 hover:border-gray-500"
-                                        }`}
+                                            }`}
                                         style={{
                                             backgroundColor:
                                                 COLOR_HEX[c],
@@ -123,26 +238,63 @@ export default function ProductDesigner({
 
                         {/* ── Size selector ── */}
                         <div className="mt-6">
-                            <p className="mb-2 text-sm font-semibold">
-                                Size
-                            </p>
-                            <div className="flex gap-2">
-                                {SIZES.map((s) => (
-                                    <button
-                                        key={s}
-                                        onClick={() =>
-                                            onSizeChange(s)
-                                        }
-                                        className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                                            selectedSize ===
-                                            s
-                                                ? "bg-black text-white"
-                                                : "border-gray-300 text-gray-700 hover:border-gray-500"
-                                        }`}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
+                            <div className="mb-2 flex items-center gap-2">
+                                <p className="text-sm font-semibold">
+                                    Size
+                                </p>
+                                {stockLoading && (
+                                    <span className="text-xs text-gray-400">
+                                        Checking availability…
+                                    </span>
+                                )}
+                                {stockError && (
+                                    <span className="text-xs text-amber-500">
+                                        ⚠ Stock unavailable
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {SIZES.map((s) => {
+                                    const available =
+                                        isSizeAvailable(s);
+                                    return (
+                                        <div
+                                            key={s}
+                                            className="flex flex-col items-center gap-0.5"
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    if (available)
+                                                        onSizeChange(
+                                                            s
+                                                        );
+                                                }}
+                                                disabled={
+                                                    !available
+                                                }
+                                                title={
+                                                    !available
+                                                        ? "Out of Stock"
+                                                        : s
+                                                }
+                                                className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${!available
+                                                        ? "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300 opacity-50"
+                                                        : selectedSize ===
+                                                            s
+                                                            ? "bg-black text-white"
+                                                            : "border-gray-300 text-gray-700 hover:border-gray-500"
+                                                    }`}
+                                            >
+                                                {s}
+                                            </button>
+                                            {!available && (
+                                                <span className="text-[10px] leading-none text-red-400">
+                                                    Out of Stock
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -157,9 +309,22 @@ export default function ProductDesigner({
                         </button>
                         <button
                             onClick={onContinue}
-                            className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
+                            disabled={
+                                !selectedVariantAvailable
+                            }
+                            title={
+                                !selectedVariantAvailable
+                                    ? "Selected variant is out of stock"
+                                    : undefined
+                            }
+                            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition ${selectedVariantAvailable
+                                    ? "bg-red-500 hover:bg-red-600"
+                                    : "cursor-not-allowed bg-gray-300"
+                                }`}
                         >
-                            Continue
+                            {selectedVariantAvailable
+                                ? "Continue"
+                                : "Out of Stock"}
                         </button>
                     </div>
                 </div>
@@ -175,11 +340,10 @@ export default function ProductDesigner({
                             onClick={() =>
                                 setActiveTab("front")
                             }
-                            className={`flex-1 py-3 text-center text-sm font-semibold transition ${
-                                activeTab === "front"
+                            className={`flex-1 py-3 text-center text-sm font-semibold transition ${activeTab === "front"
                                     ? "border-b-2 border-red-500 text-red-500"
                                     : "text-gray-400 hover:text-gray-600"
-                            }`}
+                                }`}
                         >
                             FRONT
                         </button>
@@ -187,11 +351,10 @@ export default function ProductDesigner({
                             onClick={() =>
                                 setActiveTab("back")
                             }
-                            className={`flex-1 py-3 text-center text-sm font-semibold transition ${
-                                activeTab === "back"
+                            className={`flex-1 py-3 text-center text-sm font-semibold transition ${activeTab === "back"
                                     ? "border-b-2 border-red-500 text-red-500"
                                     : "text-gray-400 hover:text-gray-600"
-                            }`}
+                                }`}
                         >
                             BACK
                         </button>
