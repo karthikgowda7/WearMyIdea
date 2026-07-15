@@ -155,41 +155,45 @@ export default function ProductDesigner({
         /* ── Full-screen overlay ── */
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div
-                className="relative flex w-full overflow-hidden rounded-2xl bg-white text-gray-900 shadow-2xl"
+                className="relative flex w-full flex-col md:flex-row overflow-hidden rounded-2xl bg-white text-gray-900 shadow-2xl"
                 style={{ maxWidth: 960, maxHeight: "90vh" }}
             >
                 {/* ────────── Close button ────────── */}
                 <button
                     onClick={onCancel}
-                    className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                    className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur text-gray-500 shadow-sm transition hover:bg-gray-100 hover:text-gray-900 md:bg-transparent md:shadow-none"
                     aria-label="Close"
                 >
                     ✕
                 </button>
 
                 {/* ────────── Left panel ────────── */}
-                <div
-                    className="flex flex-col justify-between overflow-y-auto border-r border-gray-200 p-6"
-                    style={{ width: "40%", minWidth: 300 }}
-                >
+                <div className="flex w-full md:w-[40%] min-w-[300px] flex-col justify-between overflow-y-auto border-b md:border-b-0 md:border-r border-gray-200 p-6">
                     {/* Header */}
                     <div>
-                        <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
-                            Men&apos;s Clothing
-                        </p>
-                        <h2 className="mt-1 text-lg font-bold leading-tight">
-                            Half Sleeve Round Neck T-Shirt
-                        </h2>
-                        <p className="mt-0.5 text-xs text-gray-400">
-                            Maximum print area: 15.60 in ×
-                            19.60 in
-                        </p>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                                    Men&apos;s Clothing
+                                </p>
+                                <h2 className="mt-1 text-lg font-bold leading-tight">
+                                    Half Sleeve Round Neck T-Shirt
+                                </h2>
+                                <p className="mt-0.5 text-xs text-gray-400">
+                                    Maximum print area: 15.60 in × 19.60 in
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xl font-bold text-gray-900">₹499</p>
+                            </div>
+                        </div>
 
                         {/* ── Color picker ── */}
                         <div className="mt-6">
-                            <p className="mb-2 text-sm font-semibold">
-                                Color
-                            </p>
+                            <div className="mb-2 flex items-center justify-between">
+                                <p className="text-sm font-semibold">Color</p>
+                                <span className="text-xs font-medium text-gray-500">{selectedColor}</span>
+                            </div>
                             <div className="flex gap-3">
                                 {COLORS.map((c) => (
                                     <button
@@ -318,22 +322,19 @@ export default function ProductDesigner({
                                     : undefined
                             }
                             className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition ${selectedVariantAvailable
-                                    ? "bg-red-500 hover:bg-red-600"
+                                    ? "bg-black hover:bg-gray-800"
                                     : "cursor-not-allowed bg-gray-300"
                                 }`}
                         >
                             {selectedVariantAvailable
-                                ? "Continue"
+                                ? "Continue · ₹499"
                                 : "Out of Stock"}
                         </button>
                     </div>
                 </div>
 
                 {/* ────────── Right panel ────────── */}
-                <div
-                    className="flex flex-col bg-gray-50"
-                    style={{ width: "60%" }}
-                >
+                <div className="flex w-full md:w-[60%] flex-col bg-gray-50 min-h-[400px] md:min-h-0">
                     {/* Front / Back tabs */}
                     <div className="flex border-b border-gray-200">
                         <button
@@ -341,7 +342,7 @@ export default function ProductDesigner({
                                 setActiveTab("front")
                             }
                             className={`flex-1 py-3 text-center text-sm font-semibold transition ${activeTab === "front"
-                                    ? "border-b-2 border-red-500 text-red-500"
+                                    ? "border-b-2 border-black text-black"
                                     : "text-gray-400 hover:text-gray-600"
                                 }`}
                         >
@@ -352,7 +353,7 @@ export default function ProductDesigner({
                                 setActiveTab("back")
                             }
                             className={`flex-1 py-3 text-center text-sm font-semibold transition ${activeTab === "back"
-                                    ? "border-b-2 border-red-500 text-red-500"
+                                    ? "border-b-2 border-black text-black"
                                     : "text-gray-400 hover:text-gray-600"
                                 }`}
                         >

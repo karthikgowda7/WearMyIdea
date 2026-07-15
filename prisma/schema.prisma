@@ -7,12 +7,20 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
 
-  designs   Design[]
+  email         String?
+  name          String?
+  phone         String?
+  addressLine1  String?
+  city          String?
+  state         String?
+  pincode       String?
 
-  createdAt DateTime @default(now())
+  designs       Design[]
+
+  createdAt     DateTime @default(now())
 }
 
 model Design {
